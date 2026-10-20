@@ -1,0 +1,343 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RatingCategory {
+  TEACHING_AURA
+  HUMOUR_METER
+  CLASSROOM_VIBE
+  MENTOR_ENERGY
+  CLASSROOM_PRESENCE
+}
+
+enum CardStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+model Semester {
+  id          Int     @id @default(autoincrement())
+  name        String
+  slug        String  @unique
+  ratingsOpen Boolean @default(false)
+  isActive    Boolean @default(true)
+
+  students     Student[]
+  privateCodes PrivateCode[]
+  teachers     TeacherSemester[]
+  ratings      Rating[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Student {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+
+  semesterId Int
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  privateCodeId String      @unique
+  privateCode   PrivateCode @relation(fields: [privateCodeId], references: [id])
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([semesterId])
+}
+
+model PrivateCode {
+  id       String @id @default(cuid())
+  codeHash String @unique
+
+  semesterId Int
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  isUsed Boolean   @default(false)
+  usedAt DateTime?
+
+  student Student?
+
+  createdAt DateTime @default(now())
+
+  @@index([semesterId])
+}
+
+model Teacher {
+  id          String  @id @default(cuid())
+  name        String
+  tag         String? @unique
+  department  String
+  description String?
+  photoUrl    String?
+
+  isActive Boolean @default(true)
+
+  finalTeachingAura      Int?
+  finalHumourMeter       Int?
+  finalClassroomVibe     Int?
+  finalMentorEnergy      Int?
+  finalClassroomPresence Int?
+
+  teachingAuraTitle      String?
+  humourMeterTitle       String?
+  classroomVibeTitle     String?
+  mentorEnergyTitle      String?
+  classroomPresenceTitle String?
+
+  archetype              String?
+  specialMove            String?
+  specialMoveDescription String?
+
+  ratingCount    Int       @default(0)
+  statsFinalized Boolean   @default(false)
+  finalizedAt    DateTime?
+
+  semesters TeacherSemester[]
+  ratings   Rating[]
+
+  cards GeneratedCard[] @relation("TeacherCards")
+
+  officialCardId String?        @unique
+  officialCard   GeneratedCard? @relation("OfficialTeacherCard", fields: [officialCardId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+model TeacherSemester {
+  teacherId  String
+  semesterId Int
+
+  teacher  Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([teacherId, semesterId])
+  @@index([semesterId])
+}
+
+model Rating {
+  id String @id @default(cuid())
+
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  semesterId Int
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  voteHash String @unique
+
+  teachingAura      Int
+  humourMeter       Int
+  classroomVibe     Int
+  mentorEnergy      Int
+  classroomPresence Int
+
+  createdAt DateTime @default(now())
+
+  @@index([teacherId])
+  @@index([semesterId])
+  @@index([teacherId, semesterId])
+}
+
+model RatingTitle {
+  id Int @id @default(autoincrement())
+
+  category RatingCategory
+  value    Int
+
+  title       String
+  explanation String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([category, value])
+}
+
+model Archetype {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+
+  teachingAuraWeight      Float @default(0)
+  humourMeterWeight       Float @default(0)
+  classroomVibeWeight     Float @default(0)
+  mentorEnergyWeight      Float @default(0)
+  classroomPresenceWeight Float @default(0)
+
+  isActive Boolean @default(true)
+
+  specialMoves SpecialMove[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SpecialMove {
+  id          String @id @default(cuid())
+  name        String
+  description String
+
+  archetypeId String?
+  archetype   Archetype? @relation(fields: [archetypeId], references: [id])
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([archetypeId])
+}
+
+model GeneratedCard {
+  id String @id @default(cuid())
+
+  teacherId String
+  teacher   Teacher @relation("TeacherCards", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  version Int
+
+  // Visual variant used by the frontend card renderer
+  variantKey String
+
+  teachingAura      Int
+  humourMeter       Int
+  classroomVibe     Int
+  mentorEnergy      Int
+  classroomPresence Int
+
+  teachingAuraTitle      String
+  humourMeterTitle       String
+  classroomVibeTitle     String
+  mentorEnergyTitle      String
+  classroomPresenceTitle String
+
+  archetype String
+
+  specialMove            String
+  specialMoveDescription String
+
+  imageUrl String?
+
+  status CardStatus @default(DRAFT)
+
+  generatedAt DateTime  @default(now())
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+
+  officialFor Teacher? @relation("OfficialTeacherCard")
+
+  @@unique([teacherId, version])
+  @@index([teacherId])
+  @@index([status])
+}
+
+model Admin {
+  id String @id @default(cuid())
+
+  email        String  @unique
+  passwordHash String
+  name         String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppSetting {
+  key   String @id
+  value String
+
+  updatedAt DateTime @updatedAt
+}
+
+enum SchoolTeacherStatus {
+  OPEN
+  PAUSED
+  FORGING
+  COMPLETED
+}
+
+model SchoolTeacher {
+  id         String  @id @default(cuid())
+  name       String
+  schoolName String
+  photoUrl   String?
+
+  status SchoolTeacherStatus @default(OPEN)
+
+  ratings SchoolRating[]
+  card    SchoolCard?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SchoolRating {
+  id        String @id @default(cuid())
+  teacherId String
+
+  teachingAura      Int
+  humourMeter       Int
+  classroomVibe     Int
+  mentorEnergy      Int
+  classroomPresence Int
+
+  teacher SchoolTeacher @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@index([teacherId])
+}
+
+model SchoolCard {
+  id        String @id @default(cuid())
+  teacherId String @unique
+
+  teacher SchoolTeacher @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+
+  teachingAura      Int
+  humourMeter       Int
+  classroomVibe     Int
+  mentorEnergy      Int
+  classroomPresence Int
+
+  teachingAuraTitle      String
+  humourMeterTitle       String
+  classroomVibeTitle     String
+  mentorEnergyTitle      String
+  classroomPresenceTitle String
+
+  archetype              String
+  specialMove            String
+  specialMoveDescription String
+
+  variantKey String @default("NEON_BLUE")
+
+  createdAt DateTime @default(now())
+}

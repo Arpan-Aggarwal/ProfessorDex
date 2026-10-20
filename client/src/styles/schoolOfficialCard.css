@@ -1,0 +1,108 @@
+/* ==========================================
+   SCHOOL OFFICIAL CARD — STATIC EDITION
+   Reuses the original college card CSS.
+   No animation or transition is allowed.
+   ========================================== */
+
+.school-static-card,
+.school-static-card *,
+.school-static-card::before,
+.school-static-card::after,
+.school-static-card *::before,
+.school-static-card *::after {
+  animation: none !important;
+  transition: none !important;
+  animation-delay: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+.school-static-card {
+  width: 100%;
+  max-width: 590px;
+  min-width: 0;
+  margin: 0 auto;
+  transform: none !important;
+  perspective: none !important;
+}
+
+/* Keep the original portrait lighting,
+   but freeze the spinning glow. */
+.school-static-card .premium-photo-glow {
+  animation: none !important;
+  transform: rotate(0deg) !important;
+}
+
+/* Decorative visual effects remain visible,
+   but are completely motionless. */
+.school-static-card .special-move-visual,
+.school-static-card .move-effect-aura,
+.school-static-card .move-effect-ring,
+.school-static-card .move-effect-core,
+.school-static-card .move-effect-particle {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Prevent animated special-move transforms
+   from leaving rings or particles displaced. */
+.school-static-card .move-effect-ring-one,
+.school-static-card .move-effect-ring-two,
+.school-static-card .move-effect-ring-three,
+.school-static-card .move-effect-core {
+  transform: none !important;
+}
+
+/* Keep original static decorative shapes. */
+.school-static-card .dex-circuit-layer,
+.school-static-card .dex-inner-frame {
+  pointer-events: none;
+}
+
+/* Preserve the official college-style seal. */
+.school-static-card .premium-official-seal {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Ensure the card is fully visible in the gallery. */
+.sh-gallery .school-static-card {
+  max-width: 590px;
+}
+
+/* The original card is 590px wide,
+   so give gallery columns enough room. */
+.sh-gallery:has(.school-static-card) {
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(100%, 590px), 1fr));
+}
+
+/* Presentation should use the original
+   college card width, not the old 420px limit. */
+.sh-presentation-card:has(.school-static-card) {
+  width: min(100%, 590px);
+  max-width: 590px;
+}
+
+/* Allow the tall college card to scroll
+   instead of clipping on smaller screens. */
+.sh-presentation-content:has(.school-static-card) {
+  overflow: auto;
+  align-items: flex-start;
+}
+
+@media (max-width: 650px) {
+  .sh-presentation-content:has(.school-static-card) {
+    padding: 12px 5px;
+    gap: 4px;
+  }
+
+  .sh-presentation-content:has(.school-static-card)
+  .sh-slide-arrow {
+    padding: 5px !important;
+  }
+
+  .school-static-card {
+    max-width: 100%;
+  }
+}
