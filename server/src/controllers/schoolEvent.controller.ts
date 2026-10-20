@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { Prisma } from "../generated/prisma/client.ts";
 import { prisma } from "../config/database.ts";
+import { uploadPhotoToCloudinary } from "../services/cloudinaryUpload.service.ts";
 
 const ratingKeys = [
   "teachingAura",
@@ -92,15 +93,22 @@ export async function createSchoolTeacher(
   try {
     const data = parseTeacherFields(req.body);
 
-    const teacher = await prisma.schoolTeacher.create({
-      data: {
-        name: data.name!,
-        schoolName: data.schoolName!,
-        photoUrl: req.file
-          ? `/uploads/school-teachers/${req.file.filename}`
-          : null,
-      },
-    });
+    
+const photoUrl = req.file
+  ? await uploadPhotoToCloudinary(
+      req.file,
+      "school-teachers"
+    )
+  : null;
+
+const teacher = await prisma.schoolTeacher.create({
+  data: {
+    name: data.name!,
+    schoolName: data.schoolName!,
+    photoUrl,
+  },
+});
+
 
     return res.status(201).json({
       success: true,
@@ -180,18 +188,20 @@ export async function updateSchoolTeacher(
     const id = req.params.id as string;
     const data = parseTeacherFields(req.body, true);
 
-    const teacher = await prisma.schoolTeacher.update({
-      where: { id },
-      data: {
-        ...data,
-        ...(req.file
-          ? {
-              photoUrl:
-                `/uploads/school-teachers/${req.file.filename}`,
-            }
-          : {}),
-      },
-    });
+    const photoUrl = req.file
+  ? await uploadPhotoToCloudinary(
+      req.file,
+      "school-teachers"
+    )
+  : undefined;
+
+const teacher = await prisma.schoolTeacher.update({
+  where: { id },
+  data: {
+    ...data,
+    ...(photoUrl ? { photoUrl } : {}),
+  },
+});
 
     return res.json({
       success: true,

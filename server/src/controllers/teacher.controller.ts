@@ -6,6 +6,7 @@ import {
   updateTeacher,
 } from "../services/teacher.service.ts";
 import type { Request,Response } from "express";
+import { uploadPhotoToCloudinary } from "../services/cloudinaryUpload.service.ts";
 function parseSemesterIds(
   value: unknown
 ): number[] {
@@ -70,8 +71,11 @@ export async function createTeacherController(
     }
 
     const photoUrl = req.file
-      ? `/uploads/professors/${req.file.filename}`
-      : undefined;
+  ? await uploadPhotoToCloudinary(
+      req.file,
+      "professors"
+    )
+  : undefined;
 
     const teacher = await createTeacher({
       name,
@@ -123,7 +127,7 @@ export async function getTeacherController(
   res: Response
 ) {
   const teacher = await getTeacherById(
-    req.params.id
+    req.params.id as string
   );
 
   if (!teacher) {
@@ -153,11 +157,14 @@ export async function updateTeacherController(
     }
 
     const photoUrl = req.file
-      ? `/uploads/professors/${req.file.filename}`
-      : undefined;
+  ? await uploadPhotoToCloudinary(
+      req.file,
+      "professors"
+    )
+  : undefined;
 
     const teacher = await updateTeacher(
-      req.params.id,
+      req.params.id as string,
       {
         name: req.body.name,
         department: req.body.department,
@@ -208,7 +215,7 @@ export async function deleteTeacherController(
 ) {
   try {
     await deleteTeacher(
-      req.params.id
+      req.params.id as string
     );
 
     return res.json({

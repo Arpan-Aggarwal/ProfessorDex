@@ -1,33 +1,7 @@
+
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 
-const uploadDirectory = path.resolve(
-  process.cwd(),
-  "uploads",
-  "professors"
-);
-
-fs.mkdirSync(uploadDirectory, {
-  recursive: true,
-});
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadDirectory);
-  },
-
-  filename: (_req, file, cb) => {
-    const extension = path.extname(file.originalname);
-
-    const uniqueName =
-      `professor-${Date.now()}-${Math.round(
-        Math.random() * 1e9
-      )}${extension}`;
-
-    cb(null, uniqueName);
-  },
-});
+const storage = multer.memoryStorage();
 
 const fileFilter: multer.Options["fileFilter"] = (
   _req,

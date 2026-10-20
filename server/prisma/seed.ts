@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import {
   PrismaClient,
   RatingCategory,
-} from "../src/generated/prisma/client";
+} from "../src/generated/prisma/client.ts";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is missing from .env");
