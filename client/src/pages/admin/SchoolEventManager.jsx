@@ -13,6 +13,7 @@ import {
   Sparkles,
   Users,
   X,
+  Trash2,
 } from "lucide-react";
 import api from "../../api/http";
 import "../../styles/schoolEvent.css";
@@ -222,6 +223,45 @@ export default function SchoolEventManager() {
       setSaving(false);
     }
   }
+
+
+async function deleteTeacher(teacher) {
+  if (busyId) return;
+
+  const confirmed = window.confirm(
+    `Delete ${teacher.name} from ${teacher.schoolName}?\n\nThis permanently deletes the teacher, all collected ratings, and any forged card. This cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  setBusyId(teacher.id);
+  setError("");
+  setNotice("");
+
+  try {
+    await api.delete(
+      `/school-event/admin/teachers/${teacher.id}`
+    );
+
+    if (editing?.id === teacher.id) {
+      setFormOpen(false);
+      setEditing(null);
+      setForm(emptyForm);
+      setPreview(null);
+    }
+
+    setNotice(
+      `${teacher.name} and their card/ratings were deleted.`
+    );
+
+    await loadTeachers();
+  } catch (err) {
+    setError(errorMessage(err));
+  } finally {
+    setBusyId(null);
+  }
+}
+
 
   async function changeStatus(teacher) {
     if (busyId) return;
@@ -450,6 +490,18 @@ export default function SchoolEventManager() {
                       <Pencil size={15} />
                       Edit
                     </button>
+
+                    
+<button
+  className="school-btn school-btn-danger"
+  disabled={busyId !== null}
+  onClick={() => deleteTeacher(teacher)}
+  title="Permanently delete this teacher, ratings, and card"
+>
+  <Trash2 size={15} />
+  {busyId === teacher.id ? "Deleting..." : "Delete"}
+</button>
+
 
                     {["OPEN", "PAUSED"].includes(teacher.status) && (
                       <button

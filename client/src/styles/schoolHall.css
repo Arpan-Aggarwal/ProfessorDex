@@ -123,17 +123,30 @@
   color: white;
 }
 
-.sh-error {
+
+.sh-error,
+.sh-notice {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 14px;
   padding: 13px 17px;
   margin-bottom: 22px;
-  border: 1px solid #a94c63;
   border-radius: 12px;
+}
+
+.sh-error {
+  border: 1px solid #a94c63;
   color: #ffc1ca;
   background: #351924;
 }
+
+.sh-notice {
+  border: 1px solid #347b68;
+  color: #b8f6df;
+  background: #102b27;
+}
+
 
 /* Card */
 
@@ -787,4 +800,18 @@
     font-size: 9px;
     letter-spacing: 0.1em;
   }
+}
+
+
+
+
+.sh-page .sh-delete-button {
+  color: #ffc1ca;
+  border-color: #884052;
+  background: #351924;
+}
+
+.sh-page .sh-delete-button:hover:not(:disabled) {
+  border-color: #ff8195;
+  background: #4a2030;
 }
