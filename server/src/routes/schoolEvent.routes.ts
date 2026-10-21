@@ -54,6 +54,42 @@ admin.patch(
   updateSchoolTeacher
 );
 
+admin.delete("/teachers/:id", async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  try {
+    const deleted = await prisma.$transaction(async (tx) => {
+      const teacher = await tx.schoolTeacher.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+
+      if (!teacher) return false;
+
+      await tx.schoolRating.deleteMany({ where: { teacherId: id } });
+      await tx.schoolCard.deleteMany({ where: { teacherId: id } });
+      await tx.schoolTeacher.delete({ where: { id } });
+
+      return true;
+    });
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "School teacher not found.",
+      });
+    }
+
+    return res.json({ success: true, message: "Teacher deleted." });
+  } catch (error) {
+    console.error("Teacher deletion failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete school teacher.",
+    });
+  }
+});
+
 admin.patch(
   "/teachers/:id/status",
   changeSchoolTeacherStatus
@@ -143,6 +179,48 @@ admin.get(
  *
  * Admin-only: retrieve one forged school card.
  */
+admin.delete("/cards/:id", async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  try {
+    const deleted = await prisma.$transaction(async (tx) => {
+      const card = await tx.schoolCard.findUnique({
+        where: { id },
+        select: { teacherId: true },
+      });
+
+      if (!card) return false;
+
+      await tx.schoolCard.delete({ where: { id } });
+
+      await tx.schoolTeacher.updateMany({
+        where: { id: card.teacherId, status: "COMPLETED" },
+        data: { status: "PAUSED" },
+      });
+
+      return true;
+    });
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "School card not found.",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Card deleted; teacher and ratings retained.",
+    });
+  } catch (error) {
+    console.error("Card deletion failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete school card.",
+    });
+  }
+});
+
 admin.get(
   "/cards/:id",
   async (req: Request, res: Response) => {

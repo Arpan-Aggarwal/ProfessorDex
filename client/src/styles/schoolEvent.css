@@ -483,3 +483,14 @@
     flex-wrap: wrap;
   }
 }
+
+.school-btn-danger {
+  color: #ffc0ca;
+  border-color: rgba(255, 105, 130, 0.35);
+  background: rgba(165, 35, 62, 0.16);
+}
+
+.school-btn-danger:hover:not(:disabled) {
+  border-color: rgba(255, 105, 130, 0.8);
+  background: rgba(165, 35, 62, 0.3);
+}

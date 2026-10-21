@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Sparkles,
   X,
+  Trash2,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import api from "../../api/http";
@@ -58,8 +59,12 @@ export default function SchoolHallOfLegends() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const [exporting, setExporting] = useState(false);
-  const [fullscreen, setFullscreen] = useState(false);
+  
+const [exporting, setExporting] = useState(false);
+const [deletingId, setDeletingId] = useState(null);
+const [notice, setNotice] = useState("");
+const [fullscreen, setFullscreen] = useState(false);
+
 
   const galleryRef = useRef(null);
   const exportRef = useRef(null);
@@ -155,6 +160,58 @@ export default function SchoolHallOfLegends() {
     }
   }
 
+
+async function deleteCard(card) {
+  if (!card || deletingId !== null) return;
+
+  const teacherName = card.teacher?.name || "this teacher";
+
+  const confirmed = window.confirm(
+    `Delete the forged card for ${teacherName}?\n\nOnly the card will be deleted. The teacher and collected ratings will remain, and the teacher will return to Paused so you can forge a new card later.`
+  );
+
+  if (!confirmed) return;
+
+  setDeletingId(card.id);
+  setError("");
+  setNotice("");
+
+  const deletedIndex = cards.findIndex(
+    (item) => item.id === card.id
+  );
+
+  try {
+    await api.delete(
+      `/school-event/admin/cards/${card.id}`
+    );
+
+    setCards((current) =>
+      current.filter((item) => item.id !== card.id)
+    );
+
+    setSelectedIndex((currentIndex) => {
+      if (currentIndex === null || currentIndex === undefined) {
+        return null;
+      }
+
+      if (currentIndex === deletedIndex) return null;
+
+      return currentIndex > deletedIndex
+        ? currentIndex - 1
+        : currentIndex;
+    });
+
+    setNotice(
+      `Deleted ${teacherName}'s card. The teacher and ratings were kept.`
+    );
+  } catch (err) {
+    setError(getError(err));
+  } finally {
+    setDeletingId(null);
+  }
+}
+
+
   const selectedCard =
     selectedIndex !== null ? cards[selectedIndex] : null;
 
@@ -202,6 +259,21 @@ export default function SchoolHallOfLegends() {
         </div>
       )}
 
+
+{notice && (
+  <div className="sh-notice" role="status">
+    {notice}
+    <button
+      onClick={() => setNotice("")}
+      aria-label="Dismiss notice"
+    >
+      <X size={16} />
+    </button>
+  </div>
+)}
+
+
+
       {loading ? (
         <div className="sh-empty">Loading legendary cards...</div>
       ) : cards.length === 0 ? (
@@ -230,6 +302,16 @@ export default function SchoolHallOfLegends() {
                   <Download size={16} />
                   Export
                 </button>
+                
+<button
+  className="sh-delete-button"
+  disabled={exporting || deletingId !== null}
+  onClick={() => deleteCard(card)}
+>
+  <Trash2 size={16} />
+  {deletingId === card.id ? "Deleting..." : "Delete"}
+</button>
+
               </div>
             </div>
           ))}
