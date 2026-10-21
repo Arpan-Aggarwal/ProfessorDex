@@ -373,10 +373,14 @@ export default function StudentRegister() {
                   updateField(
                     "privateCode",
                     event.target.value
+                      .replace(/\s+/g, "")
                       .toUpperCase()
                   )
                 }
-                placeholder="PD1-XXXX-XXXX"
+                placeholder="5-character code (e.g. K9X2M)"
+                maxLength={10}
+                autoComplete="off"
+                spellCheck="false"
                 required
               />
 

@@ -23,21 +23,53 @@ export async function generateCodes(
     throw new Error("INVALID_COUNT");
   }
 
-  const semesterLabel =
-    semester.slug.replace("sem-", "");
+  const codeToHashMap = new Map<string, string>();
 
-  const generatedCodes = new Set<string>();
-
-  while (generatedCodes.size < count) {
-    generatedCodes.add(
-      generatePrivateCode(semesterLabel)
-    );
+  while (codeToHashMap.size < count) {
+    const code = generatePrivateCode(5);
+    if (!codeToHashMap.has(code)) {
+      codeToHashMap.set(code, hashPrivateCode(code));
+    }
   }
 
-  const codes = [...generatedCodes];
+  // Check if any candidate hashes already exist in the database
+  const candidateHashes = Array.from(codeToHashMap.values());
+  const existingRecords = await prisma.privateCode.findMany({
+    where: {
+      codeHash: { in: candidateHashes },
+    },
+    select: {
+      codeHash: true,
+    },
+  });
+
+  if (existingRecords.length > 0) {
+    const existingHashes = new Set(existingRecords.map((r) => r.codeHash));
+    for (const [code, hash] of codeToHashMap.entries()) {
+      if (existingHashes.has(hash)) {
+        codeToHashMap.delete(code);
+      }
+    }
+
+    // Refill any that collided with existing database entries
+    while (codeToHashMap.size < count) {
+      const code = generatePrivateCode(5);
+      const hash = hashPrivateCode(code);
+      if (!codeToHashMap.has(code)) {
+        const inDb = await prisma.privateCode.findUnique({
+          where: { codeHash: hash },
+        });
+        if (!inDb) {
+          codeToHashMap.set(code, hash);
+        }
+      }
+    }
+  }
+
+  const codes = Array.from(codeToHashMap.keys());
 
   const databaseRows = codes.map((code) => ({
-    codeHash: hashPrivateCode(code),
+    codeHash: codeToHashMap.get(code)!,
     semesterId,
   }));
 

@@ -19,15 +19,13 @@ function randomPart(length: number) {
   return result;
 }
 
-export function generatePrivateCode(
-  semesterLabel: string
-) {
-  return `PD${semesterLabel}-${randomPart(4)}-${randomPart(4)}`;
+export function generatePrivateCode(length = 5) {
+  return randomPart(length);
 }
 
 export function hashPrivateCode(code: string) {
   return crypto
-    .createHmac("sha256", CODE_HASH_SECRET)
-    .update(code.trim().toUpperCase())
+    .createHmac("sha256", CODE_HASH_SECRET!)
+    .update(code.replace(/\s+/g, "").toUpperCase())
     .digest("hex");
 }
